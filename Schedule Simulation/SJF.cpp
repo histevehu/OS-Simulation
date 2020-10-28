@@ -58,7 +58,7 @@ void process_info_input()
 	}
 }
 
-//对就绪队列的PCB根据优先级进行降序排列
+//对就绪队列的PCB根据到达时间进行升序排列
 void sort()
 {
 	if (Ready_queue.empty() && Block_queue.empty())
