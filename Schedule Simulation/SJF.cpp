@@ -1,3 +1,5 @@
+//抢占式短任务优先
+
 #include <iostream>
 #include <vector>
 #define OUTPUT_TABLE_WIDTH 15
@@ -20,12 +22,12 @@ struct pcb
 	int Block_time_t;  //自阻塞开始，已阻塞时间片长度 =0结束阻塞
 	int State;		   // 状态   -1为等待	0为就绪  1为阻塞  2为完成
 };
-vector<pcb> Waiting_queue; //就绪队列
+vector<pcb> Waiting_queue; //等待队列
 vector<pcb> Ready_queue;   //就绪队列
 vector<pcb> Block_queue;   //阻塞队列
-vector<pcb> Finish_queue;  //结束队列
+vector<pcb> Finish_queue;  //完成队列
 int n;					   //进程数目
-//就绪队列就是执行的含义
+
 void process_info_input()
 {
 	cout << "The number of processes：";
@@ -58,15 +60,15 @@ void process_info_input()
 	}
 }
 
-//对就绪队列的PCB根据到达时间进行升序排列
+//对就绪队列的PCB根据任务时长进行升序排列
 void sort()
 {
 	if (Ready_queue.empty() && Block_queue.empty())
 		return;
 	else
-		for (int i = 0; i < Ready_queue.size() - 1; i++) //就绪队列排序
+		for (int i = 0; i < Ready_queue.size() - 1; i++)
 			for (int j = i + 1; j < Ready_queue.size(); j++)
-				if (Ready_queue[i].Arrive_time > Ready_queue[j].Arrive_time)
+				if (Ready_queue[i].Cost_time > Ready_queue[j].Cost_time)
 				{
 					swap(Ready_queue[i], Ready_queue[j]);
 				}
@@ -218,6 +220,7 @@ void process_info_print()
 	}
 }
 
+//时间片运行
 void run(int order) //执行结果判断
 {
 	//扫描等待队列，装载可用pcb入就绪队列
@@ -293,6 +296,7 @@ int main()
 	process_info_input();
 	int order = 0;
 	cout.setf(std::ios::left);
+	//每一个循环即一个时间片
 	while (!Waiting_queue.empty() || !Ready_queue.empty() || !Block_queue.empty())
 	{
 		run(order++);
@@ -301,6 +305,7 @@ int main()
 			 << "================================================================================ Time Slice: " << (order) << " ================================================================================" << endl;
 		process_info_print();
 	}
+	//全部队列为空，即所有进程运行完毕，输出结果
 	cout << "Running Finished." << endl
 		 << "Process completion sequence:";
 	for (vector<pcb>::iterator fq = Finish_queue.begin(); fq != Finish_queue.end(); fq++)
