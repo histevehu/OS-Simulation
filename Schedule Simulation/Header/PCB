@@ -1,0 +1,24 @@
+#pragma once
+#ifndef _STRUCT_PCB_
+#define _STRUCT_PCB_
+
+struct pcb
+{
+    //Attribute value
+    std::string id;  //ID
+    int priority;    //priority
+    int Arrive_time; //Time of arrival
+    int Cost_time;   //The total running time required by the task =Running_time+Rest_time
+    int TA_time;     //Turn Around Time (TurnAround Time) = completion time-arrival time
+    int Start_block; //The number of time slices to run before blocking
+    int Block_time;  //Blocked time
+    double WTA_time; //Weighted turnaround time
+
+    //Dynamic attribute value
+    int Running_time;  //Running time
+    int Rest_time;     //The time still needed =0:end
+    int Start_block_t; //The length of the time slice that has been running since the last time the blocking ended and the operation was resumed, which is used to calculate how many time slices to run and then start blocking again (=0)
+    int Block_time_t;  //Since the start of blocking, the length of the rest blocked time slice = 0:ends blocking
+    int State;         // State -1:waiting, 0:ready, 1:blocked, 2:completed
+};
+#endif

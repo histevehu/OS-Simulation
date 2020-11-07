@@ -1,30 +1,21 @@
+//RR schedule
 #include <iostream>
 #include <vector>
-#define RR 3
+#include "header/PCB"
+#include "header/ProcessAnalyze"
+#define RR 3 //The length of the running time period allocate to the process each time (unit: time slice)
 #define OUTPUT_TABLE_WIDTH 15
 using namespace std;
 
-struct pcb
-{
-	//属性值
-	string id;		 //ID
-	int Arrive_time; //到达时间
-	int Cost_time;	 //任务需要的总运行时间 =Running_time+Rest_time
-	int Total_time;	 //总耗时 =总运行时间（Cost_time）+ 就绪队列总排队时间
 
-	//动态记录值
-	int Running_time; //已运行时间
-	int Rest_time;	  //还需要的运行时间 =0结束
-	int State;		  // 状态		0为就绪  1为完成
-};
-vector<pcb> Ready_queue; //就绪队列
-vector<pcb>::iterator rq;
-vector<pcb> Finish_queue; //结束队列
-int n;					  //进程数目
-//就绪队列就是执行的含义
+vector<pcb> Ready_queue;
+vector<pcb>::iterator rq; //ready queue iterator
+vector<pcb> Finish_queue;
+int n; //Number of processes
+
 void process_info_input()
 {
-	cout << "The number of processes：";
+	cout << "The number of processes:";
 	cin >> n;
 	for (int i = 0; i < n; i++)
 	{
@@ -38,19 +29,20 @@ void process_info_input()
 		cin >> process.Cost_time;
 		process.Rest_time = process.Cost_time;
 		process.Running_time = 0;
-		process.Total_time = 0;
+		process.TA_time = 0;
+		process.WTA_time = 0;
 		process.State = 0;
 		Ready_queue.push_back(process);
 	}
 }
 
-//对就绪队列的PCB根据到达时间进行升序排列
+//Arrange PCBs in the ready queue in ascending order according to the arrival time
 void sort()
 {
 	if (Ready_queue.empty())
 		return;
 	else
-		for (int i = 0; i < Ready_queue.size() - 1; i++) //就绪队列排序
+		for (int i = 0; i < Ready_queue.size() - 1; i++) //Ready queue sorting
 			for (int j = i + 1; j < Ready_queue.size(); j++)
 				if (Ready_queue[i].Arrive_time > Ready_queue[j].Arrive_time)
 				{
@@ -58,7 +50,7 @@ void sort()
 				}
 }
 
-//输出进程队列信息
+//Output process queue information
 void process_info_print()
 {
 
@@ -77,7 +69,7 @@ void process_info_print()
 	cout.width(OUTPUT_TABLE_WIDTH);
 	cout << "State" << endl;
 
-	if (!Ready_queue.empty()) //就绪队列输出
+	if (!Ready_queue.empty()) //Ready queue output
 	{
 		cout << "<Ready Queue>" << endl;
 		for (int i = 0; i < Ready_queue.size(); i++)
@@ -111,7 +103,7 @@ void process_info_print()
 			cout.width(OUTPUT_TABLE_WIDTH);
 			cout << (*fq).Cost_time;
 			cout.width(OUTPUT_TABLE_WIDTH);
-			cout << (*fq).Total_time;
+			cout << (*fq).TA_time;
 			cout.width(OUTPUT_TABLE_WIDTH);
 			cout << (*fq).Running_time;
 			cout.width(OUTPUT_TABLE_WIDTH);
@@ -124,15 +116,16 @@ void process_info_print()
 
 void run(int order)
 {
-	//如当前节点pcb已到达则执行
+	//run if the current pcb has arrived
 	if ((*rq).Arrive_time <= order)
 	{
-		//运行就绪队列
+		//Run ready queue
 		(*rq).Running_time++;
 		(*rq).Rest_time--;
 		if ((*rq).Rest_time <= 0)
 		{
-			(*rq).Total_time = order + 1 - (*rq).Arrive_time;
+			(*rq).TA_time = order + 1 - (*rq).Arrive_time;
+			Ready_queue[0].WTA_time = 1.0 * Ready_queue[0].TA_time / Ready_queue[0].Cost_time;
 			(*rq).State = 1;
 			Finish_queue.push_back(*rq);
 			rq = Ready_queue.erase(rq);
@@ -141,11 +134,11 @@ void run(int order)
 		}
 		else
 		{
-			if ((*rq).Running_time % RR == 0) //当前任务时间片用尽，切换为下一任务
+			if ((*rq).Running_time % RR == 0) //Current process RR running time is out, switch to the next task
 			{
-				if (rq == Ready_queue.end() - 1) //若当前任务为队尾，则下一任务队首重新开始
+				if (rq == Ready_queue.end() - 1) //If the current process is the end of the queue, the next task will restart at the begin of queue
 					rq = Ready_queue.begin();
-				//否则判断下一任务是否将到达，若否则仍从队首重新开始
+				//Or judge whether the next process will arrive in next time point, if not, start again from the begin of queue
 				else
 				{
 					rq++;
@@ -179,5 +172,7 @@ int main()
 	}
 	cout << endl
 		 << "Total time slices: " << order << endl;
+	analyze(Finish_queue, 3);
+	system("pause");
 	return 0;
 }

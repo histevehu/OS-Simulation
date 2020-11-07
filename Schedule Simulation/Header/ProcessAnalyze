@@ -1,0 +1,70 @@
+#pragma once
+#ifndef _PROGRAM_PROCESS_ANALYZE_
+#define _PROGRAM_PROCESS_ANALYZE_
+
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include "PCB"
+#define OUTPUT_TABLE_WIDTH 15
+using namespace std;
+
+string type[] = {"MaxPriority", "FCFS", "SJF", "RR"};
+
+void analyze(vector<pcb> &Finish_queue, int algType)
+{
+    if (!Finish_queue.empty())
+    {
+        int T_TA_TIME = 0;
+        double T_WTA_TIME = 0;
+        //Print analyze results
+        cout << "================================================================================ Analyze ================================================================================" << endl;
+        cout.width(OUTPUT_TABLE_WIDTH);
+        cout << "ID";
+        cout.width(OUTPUT_TABLE_WIDTH);
+        cout << "TA time";
+        cout.width(OUTPUT_TABLE_WIDTH);
+        cout << "WTA time" << endl;
+        cout.width(OUTPUT_TABLE_WIDTH);
+        for (vector<pcb>::iterator fq = Finish_queue.begin(); fq != Finish_queue.end(); fq++)
+        {
+            cout.width(OUTPUT_TABLE_WIDTH);
+            cout << (*fq).id;
+            cout.width(OUTPUT_TABLE_WIDTH);
+            cout << (*fq).TA_time;
+            T_TA_TIME += (*fq).TA_time;
+            cout.width(OUTPUT_TABLE_WIDTH);
+            cout << (*fq).WTA_time << endl;
+            T_WTA_TIME += (*fq).WTA_time;
+        }
+        cout << "--------------" << endl;
+        cout << "Total TA_time: " << T_TA_TIME << endl;
+        cout << "Total WTA_time: " << T_WTA_TIME << endl;
+        //Save analyze results to file
+        ofstream outFile;
+        outFile.setf(std::ios::left);
+        outFile.open(type[algType] + "_Analyze.txt");
+        outFile << "===== Analyze: " << type[algType] << " =====" << endl;
+        outFile.width(OUTPUT_TABLE_WIDTH);
+        outFile << "ID";
+        outFile.width(OUTPUT_TABLE_WIDTH);
+        outFile << "TA time";
+        outFile.width(OUTPUT_TABLE_WIDTH);
+        outFile << "WTA time" << endl;
+        outFile.width(OUTPUT_TABLE_WIDTH);
+        for (vector<pcb>::iterator fq = Finish_queue.begin(); fq != Finish_queue.end(); fq++)
+        {
+            outFile.width(OUTPUT_TABLE_WIDTH);
+            outFile << (*fq).id;
+            outFile.width(OUTPUT_TABLE_WIDTH);
+            outFile << (*fq).TA_time;
+            outFile.width(OUTPUT_TABLE_WIDTH);
+            outFile << (*fq).WTA_time << endl;
+        }
+        outFile << "--------------" << endl;
+        outFile << "Total TA_time: " << T_TA_TIME << endl;
+        outFile << "Total WTA_time: " << T_WTA_TIME << endl;
+        outFile.close();
+    }
+}
+#endif

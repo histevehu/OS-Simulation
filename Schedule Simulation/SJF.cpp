@@ -1,36 +1,21 @@
-//抢占式短任务优先
-
+//Preemptive short jobs first schedule
 #include <iostream>
 #include <vector>
+#include "header/PCB"
+#include "header/ProcessAnalyze"
 #define OUTPUT_TABLE_WIDTH 15
+
 using namespace std;
 
-struct pcb
-{
-	//属性值
-	string id;		 //ID
-	int Arrive_time; //到达时间
-	int Cost_time;	 //任务需要的总运行时间 =Running_time+Rest_time
-	int Total_time;	 //总耗时 =总运行时间（Cost_time）+总阻塞时间+就绪队列总排队时间
-	int Start_block; //运行多少个时间片之后开始阻塞
-	int Block_time;	 //阻塞的时间
-
-	//动态记录值
-	int Running_time;  //已运行时间
-	int Rest_time;	   //还需要的运行时间 =0结束
-	int Start_block_t; //自上次阻塞结束恢复运行以来已运行时间片长度,用以计算运行多少个时间片之后再次开始阻塞 =0开始阻塞
-	int Block_time_t;  //自阻塞开始，已阻塞时间片长度 =0结束阻塞
-	int State;		   // 状态   -1为等待	0为就绪  1为阻塞  2为完成
-};
-vector<pcb> Waiting_queue; //等待队列
-vector<pcb> Ready_queue;   //就绪队列
-vector<pcb> Block_queue;   //阻塞队列
-vector<pcb> Finish_queue;  //完成队列
-int n;					   //进程数目
+vector<pcb> Waiting_queue;
+vector<pcb> Ready_queue;
+vector<pcb> Block_queue;
+vector<pcb> Finish_queue;
+int n; //Number of processes
 
 void process_info_input()
 {
-	cout << "The number of processes：";
+	cout << "The number of processes:";
 	cin >> n;
 	for (int i = 0; i < n; i++)
 	{
@@ -42,17 +27,14 @@ void process_info_input()
 		cin >> process.Arrive_time;
 		cout << "Cost time:";
 		cin >> process.Cost_time;
-		/*cout << "Running_time:";
-		cin >> process.Running_time;*/
 		cout << "Start block:";
 		cin >> process.Start_block;
 		cout << "Block time:";
 		cin >> process.Block_time;
-		/*cout << "State:";
-		cin >> process.State;*/
 		process.Rest_time = process.Cost_time;
 		process.Running_time = 0;
-		process.Total_time = 0;
+		process.TA_time = 0;
+		process.WTA_time = 0;
 		process.State = -1;
 		process.Start_block_t = process.Start_block;
 		process.Block_time_t = process.Block_time;
@@ -60,7 +42,7 @@ void process_info_input()
 	}
 }
 
-//对就绪队列的PCB根据任务时长进行升序排列
+//Arrange the PCBs in the ready queue in ascending order according to the task cost time
 void sort()
 {
 	if (Ready_queue.empty() && Block_queue.empty())
@@ -74,7 +56,7 @@ void sort()
 				}
 }
 
-//输出进程队列信息
+//Output process queue information
 void process_info_print()
 {
 	if (!Waiting_queue.empty() || !Ready_queue.empty() || !Block_queue.empty() || !Finish_queue.empty())
@@ -131,7 +113,7 @@ void process_info_print()
 			cout << (*wq).State << endl;
 		}
 	}
-	if (!Ready_queue.empty()) //就绪队列输出
+	if (!Ready_queue.empty())
 	{
 		cout << "<Ready Queue>" << endl;
 		for (int i = 0; i < Ready_queue.size(); i++)
@@ -160,7 +142,7 @@ void process_info_print()
 			cout << Ready_queue[i].State << endl;
 		}
 	}
-	if (!Block_queue.empty()) //阻塞队列输出
+	if (!Block_queue.empty())
 	{
 		cout << "<Block Queue>" << endl;
 		for (int i = 0; i < Block_queue.size(); i++)
@@ -201,7 +183,7 @@ void process_info_print()
 			cout.width(OUTPUT_TABLE_WIDTH);
 			cout << (*fq).Cost_time;
 			cout.width(OUTPUT_TABLE_WIDTH);
-			cout << (*fq).Total_time;
+			cout << (*fq).TA_time;
 			cout.width(OUTPUT_TABLE_WIDTH);
 			cout << (*fq).Running_time;
 			cout.width(OUTPUT_TABLE_WIDTH);
@@ -220,20 +202,19 @@ void process_info_print()
 	}
 }
 
-//时间片运行
-void run(int order) //执行结果判断
+void run(int order)
 {
-	//扫描等待队列，装载可用pcb入就绪队列
+	//Scan the waiting queue, load the available pcb into the ready queue
 	if (!Waiting_queue.empty())
 	{
 		vector<pcb>::iterator wq = Waiting_queue.begin();
 		while (wq != Waiting_queue.end())
 		{
-			if ((*wq).Arrive_time == order) //阻塞转就绪队列
+			if ((*wq).Arrive_time == order) //Time to arrive
 			{
-				(*wq).State = 0;			  //状态改为就绪
-				Ready_queue.push_back((*wq)); //加入就绪队列
-				wq = Waiting_queue.erase(wq); //在阻塞队列中删除
+				(*wq).State = 0;			  //Set state to ready
+				Ready_queue.push_back((*wq)); //Put into ready queue
+				wq = Waiting_queue.erase(wq); //Delete from waiting queue
 			}
 			else
 			{
@@ -241,19 +222,19 @@ void run(int order) //执行结果判断
 			}
 		}
 	}
-	//先处理阻塞队列
+	//Process the blocking queue first
 	if (!Block_queue.empty())
 	{
 		vector<pcb>::iterator bq = Block_queue.begin();
 		while (bq != Block_queue.end())
 		{
-			(*bq).Block_time_t--;		 //阻塞队列阻塞时间--
-			if ((*bq).Block_time_t == 0) //阻塞转就绪队列
+			(*bq).Block_time_t--;		 //Blocking queue blocking time--
+			if ((*bq).Block_time_t == 0) //End blocking
 			{
-				(*bq).State = 0; //状态改为就绪
+				(*bq).State = 0; //Status changed to ready
 				(*bq).Start_block_t = (*bq).Start_block;
-				Ready_queue.push_back((*bq)); //加入就绪队列
-				bq = Block_queue.erase(bq);	  //在阻塞队列中删除
+				Ready_queue.push_back((*bq)); //Put into ready queue
+				bq = Block_queue.erase(bq);	  //Delete in the blocking queue
 			}
 			else
 			{
@@ -261,31 +242,32 @@ void run(int order) //执行结果判断
 			}
 		}
 	}
-	//如果就绪队列不为空，运行就绪队列
-	if (!Ready_queue.empty()) //就绪队列不为空,对就绪队列操作
+	//If the ready queue is not empty, run the ready queue
+	if (!Ready_queue.empty()) //The ready queue is not empty, operate on the ready queue
 	{
-		//对就绪队列排序
+		//Sort the ready queue
 		sort();
-		//运行就绪队列
+		//Run ready queue
 		Ready_queue[0].Rest_time--;
 		Ready_queue[0].Running_time++;
 		Ready_queue[0].Start_block_t--;
-		//进程的已占用CPU时间已达到所需要的运行时间，撤消该进程
+		//if the occupied CPU time of the process has reached the required running time, cancel the process
 		if (Ready_queue[0].Rest_time <= 0)
 		{
-			Ready_queue[0].State = 2; //完成
-			Ready_queue[0].Total_time = order + 1 - Ready_queue[0].Arrive_time;
-			Finish_queue.push_back(Ready_queue[0]); //就绪转结束队列
-			Ready_queue.erase(Ready_queue.begin()); //删除该进程
+			Ready_queue[0].State = 2; // Change state to finish
+			Ready_queue[0].TA_time = order + 1 - Ready_queue[0].Arrive_time;
+			Ready_queue[0].WTA_time = 1.0 * Ready_queue[0].TA_time / Ready_queue[0].Cost_time;
+			Finish_queue.push_back(Ready_queue[0]); //Push to finish queue
+			Ready_queue.erase(Ready_queue.begin()); //Delete the process
 		}
 		else
 		{
-			//是否即将阻塞，就绪转阻塞队列？
+			//Is it about to be blocked and should turn to the blocking queue?
 			if (Ready_queue[0].Start_block_t <= 0)
 			{
-				Ready_queue[0].State = 1; //阻塞
+				Ready_queue[0].State = 1; //block
 				Ready_queue[0].Block_time_t = Ready_queue[0].Block_time;
-				Block_queue.push_back(Ready_queue[0]); //加入阻塞队列
+				Block_queue.push_back(Ready_queue[0]); //Push to block queue
 				Ready_queue.erase(Ready_queue.begin());
 			}
 		}
@@ -296,7 +278,7 @@ int main()
 	process_info_input();
 	int order = 0;
 	cout.setf(std::ios::left);
-	//每一个循环即一个时间片
+	//Each cycle is a time slice
 	while (!Waiting_queue.empty() || !Ready_queue.empty() || !Block_queue.empty())
 	{
 		run(order++);
@@ -305,7 +287,7 @@ int main()
 			 << "================================================================================ Time Slice: " << (order) << " ================================================================================" << endl;
 		process_info_print();
 	}
-	//全部队列为空，即所有进程运行完毕，输出结果
+	//All queues are empty, all processes are finished, out result
 	cout << "Running Finished." << endl
 		 << "Process completion sequence:";
 	for (vector<pcb>::iterator fq = Finish_queue.begin(); fq != Finish_queue.end(); fq++)
@@ -314,5 +296,7 @@ int main()
 	}
 	cout << endl
 		 << "Total time slices: " << order << endl;
+	analyze(Finish_queue, 2);
+	system("pause");
 	return 0;
 }
