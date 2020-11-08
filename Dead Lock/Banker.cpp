@@ -96,75 +96,92 @@ void printRes()
 
 void initProcess()
 {
+	int n; // store input data
 	// define number of process and resources' type
 	cout << "Input the number of processes:" << endl;
 	cin >> pro;
 	cout << "Input the number of resources' type:" << endl;
 	cin >> res;
 
-	//initialize resource and available vector
-	available = *new vector<int>(res, 0);
-	resource = *new vector<int>(res, 0);
-
-	//initialize&input matrix Max
-	maximum = *new vector<vector<int>>(pro, vector<int>(res));
-	cout << ("Input the maximum matrix: ");
+	//input matrix Max
+	cout << ("Input the maximum matrix: ") << endl;
 	for (int i = 0; i < pro; i++)
 	{
+		vector<int> p_maxRes_t;
 		for (int j = 0; j < res; j++)
-			cin >> maximum[i][j];
+		{
+			cin >> n;
+			p_maxRes_t.push_back(n);
+		}
+		maximum.push_back(p_maxRes_t);
 		cout << endl;
 	}
 
-	//initialize&input matrix allocation
-	allocation = *new vector<vector<int>>(pro, vector<int>(res));
-	cout << ("Input the allocation matrix: ");
+	//input matrix allocation
+	cout << ("Input the allocation matrix: ") << endl;
 	for (int i = 0; i < pro; i++)
 	{
+		vector<int> p_alloRes_t;
 		for (int j = 0; j < res; j++)
-			cin >> allocation[i][j];
+		{
+			cin >> n;
+			p_alloRes_t.push_back(n);
+		}
+		allocation.push_back(p_alloRes_t);
 		cout << ("\n");
 	}
 
-	//initialize&input matrix available
-	cout << ("Input the available matrix: ");
+	//input matrix available
+	cout << ("Input the available matrix: ") << endl;
 	for (int i = 0; i < res; i++)
-		cin >> available[i];
+	{
+		cin >> n;
+		available.push_back(n);
+	}
 
 	//calc matrix need
-	need = *new vector<vector<int>>(pro, vector<int>(res));
 	for (int i = 0; i < pro; i++)
+	{
+		vector<int> p_needRes_t;
 		for (int j = 0; j < res; j++)
-			need[i][j] = maximum[i][j] - allocation[i][j];
+		{
+			n = maximum[i][j] - allocation[i][j];
+			p_needRes_t.push_back(n);
+		}
+		need.push_back(p_needRes_t);
+	}
 
 	//calc matrix resource
+	for (int j = 0; j < res; j++)
+		resource.push_back(available[j]);
 	for (int i = 0; i < pro; i++)
+	{
 		for (int j = 0; j < res; j++)
 			resource[j] += allocation[i][j];
-	for (int j = 0; j < res; j++)
-		resource[j] = resource[j] + available[j];
+	}
 }
 
 void initRequest()
 {
-	int n;
+	int n; // store input data
 	cout << "Input request process(-1 to finish):" << endl;
 	cin >> n;
 	if (n != -1)
-		requestQueue = *new vector<resRequst>;
-	while (n != -1)
 	{
-		resRequst rr;
-		rr.reqPro = n;
-		for (int i = 0; i < res; i++)
+		while (n != -1)
 		{
-			int rn;
-			cin >> rn;
-			rr.req.push_back(rn);
+			resRequst rr;
+			rr.reqPro = n;
+			for (int i = 0; i < res; i++)
+			{
+				int rn;
+				cin >> rn;
+				rr.req.push_back(rn);
+			}
+			requestQueue.push_back(rr);
+			printResRequest(rr);
+			cin >> n;
 		}
-		requestQueue.push_back(rr);
-		printResRequest(rr);
-		cin >> n;
 	}
 }
 
@@ -243,7 +260,7 @@ bool requestHandle(resRequst resReq)
 	{
 		if (resReq.req[i] > available[i])
 		{
-			cout << "<!>Request check failed: request res(" << resReq.req[i] << ")>available res[" << available[i] << "]" << endl;
+			cout << "<!>Request check failed: request res[" << i << "](" << resReq.req[i] << ")>available res[" << i << "](" << available[i] << ")" << endl;
 			return false;
 		}
 	}
@@ -294,6 +311,8 @@ int main()
 			requestHandle(*rqi);
 			printRes();
 		}
+		cout << line_d << line_d << endl
+			 << ">>>All requests handled." << endl;
 	}
 	system("pause");
 }
