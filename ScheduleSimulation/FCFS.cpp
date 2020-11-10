@@ -1,4 +1,4 @@
-//Dynamic max priority number schedule
+//First come first service schedule
 #include <iostream>
 #include <vector>
 #include "header/PCB"
@@ -10,7 +10,7 @@ vector<pcb> Waiting_queue;
 vector<pcb> Ready_queue;
 vector<pcb> Block_queue;
 vector<pcb> Finish_queue;
-int n; //Number of processes
+int n;
 
 void process_info_input()
 {
@@ -22,8 +22,6 @@ void process_info_input()
 		cout << "================================================================================ Process " << i + 1 << " ================================================================================" << endl;
 		cout << "id:";
 		cin >> process.id;
-		cout << "Priority:";
-		cin >> process.priority;
 		cout << "Arrive time:";
 		cin >> process.Arrive_time;
 		cout << "Cost time:";
@@ -43,15 +41,15 @@ void process_info_input()
 	}
 }
 
-//Arrange PCBs in the ready queue in descending order according to priority
+//Arrange PCBs in the ready queue in ascending order according to arrival time
 void sort()
 {
 	if (Ready_queue.empty() && Block_queue.empty())
 		return;
 	else
-		for (int i = 0; i < Ready_queue.size() - 1; i++) //Ready queue sorting
+		for (int i = 0; i < Ready_queue.size() - 1; i++) //就绪队列排序
 			for (int j = i + 1; j < Ready_queue.size(); j++)
-				if (Ready_queue[i].priority < Ready_queue[j].priority)
+				if (Ready_queue[i].Arrive_time > Ready_queue[j].Arrive_time)
 				{
 					swap(Ready_queue[i], Ready_queue[j]);
 				}
@@ -65,13 +63,11 @@ void process_info_print()
 		cout.width(OUTPUT_TABLE_WIDTH);
 		cout << "ID";
 		cout.width(OUTPUT_TABLE_WIDTH);
-		cout << "Priority";
-		cout.width(OUTPUT_TABLE_WIDTH);
 		cout << "Arrive_time";
 		cout.width(OUTPUT_TABLE_WIDTH);
 		cout << "Cost_time";
 		cout.width(OUTPUT_TABLE_WIDTH);
-		cout << "Total_time";
+		cout << "TA_time";
 		cout.width(OUTPUT_TABLE_WIDTH);
 		cout << "Running_time";
 		cout.width(OUTPUT_TABLE_WIDTH);
@@ -94,8 +90,6 @@ void process_info_print()
 		{
 			cout.width(OUTPUT_TABLE_WIDTH);
 			cout << (*wq).id;
-			cout.width(OUTPUT_TABLE_WIDTH);
-			cout << (*wq).priority;
 			cout.width(OUTPUT_TABLE_WIDTH);
 			cout << (*wq).Arrive_time;
 			cout.width(OUTPUT_TABLE_WIDTH);
@@ -126,8 +120,6 @@ void process_info_print()
 			cout.width(OUTPUT_TABLE_WIDTH);
 			cout << Ready_queue[i].id;
 			cout.width(OUTPUT_TABLE_WIDTH);
-			cout << Ready_queue[i].priority;
-			cout.width(OUTPUT_TABLE_WIDTH);
 			cout << Ready_queue[i].Arrive_time;
 			cout.width(OUTPUT_TABLE_WIDTH);
 			cout << Ready_queue[i].Cost_time;
@@ -149,15 +141,13 @@ void process_info_print()
 			cout << Ready_queue[i].State << endl;
 		}
 	}
-	if (!Block_queue.empty()) //Blocking queue output
+	if (!Block_queue.empty())
 	{
 		cout << "<Block Queue>" << endl;
 		for (int i = 0; i < Block_queue.size(); i++)
 		{
 			cout.width(OUTPUT_TABLE_WIDTH);
 			cout << Block_queue[i].id;
-			cout.width(OUTPUT_TABLE_WIDTH);
-			cout << Block_queue[i].priority;
 			cout.width(OUTPUT_TABLE_WIDTH);
 			cout << Block_queue[i].Arrive_time;
 			cout.width(OUTPUT_TABLE_WIDTH);
@@ -187,8 +177,6 @@ void process_info_print()
 		{
 			cout.width(OUTPUT_TABLE_WIDTH);
 			cout << (*fq).id;
-			cout.width(OUTPUT_TABLE_WIDTH);
-			cout << (*fq).priority;
 			cout.width(OUTPUT_TABLE_WIDTH);
 			cout << (*fq).Arrive_time;
 			cout.width(OUTPUT_TABLE_WIDTH);
@@ -224,7 +212,7 @@ void run(int order)
 			if ((*wq).Arrive_time == order) //Time to arrive
 			{
 				(*wq).State = 0;			  //Status changed to ready
-				Ready_queue.push_back((*wq)); //Put into the ready queue
+				Ready_queue.push_back((*wq)); //Push to ready queue
 				wq = Waiting_queue.erase(wq); //Delete in waiting queue
 			}
 			else
@@ -244,7 +232,7 @@ void run(int order)
 			{
 				(*bq).State = 0; //Status changed to ready
 				(*bq).Start_block_t = (*bq).Start_block;
-				Ready_queue.push_back((*bq)); //Put into ready queue
+				Ready_queue.push_back((*bq)); //push to ready queue
 				bq = Block_queue.erase(bq);	  //Delete in the blocking queue
 			}
 			else
@@ -262,19 +250,18 @@ void run(int order)
 		Ready_queue[0].Rest_time--;
 		Ready_queue[0].Running_time++;
 		Ready_queue[0].Start_block_t--;
-		//if the occupied CPU time of the process has reached the required running time, cancel the process
+		//The occupied CPU time of the process has reached the required running time, cancel the process
 		if (Ready_queue[0].Rest_time <= 0)
 		{
-			Ready_queue[0].State = 2; // Change state to finish
+			Ready_queue[0].State = 2; //carry out
 			Ready_queue[0].TA_time = order + 1 - Ready_queue[0].Arrive_time;
 			Ready_queue[0].WTA_time = 1.0 * Ready_queue[0].TA_time / Ready_queue[0].Cost_time;
-			Finish_queue.push_back(Ready_queue[0]); //Push to finish queue
+			Finish_queue.push_back(Ready_queue[0]); //Ready to end queue
 			Ready_queue.erase(Ready_queue.begin()); //Delete the process
 		}
 		else
 		{
-			Ready_queue[0].priority -= 3;
-			//Is it about to be blocked and should turn to the blocking queue?
+			//Is it about to be blocked, ready to turn to the blocking queue?
 			if (Ready_queue[0].Start_block_t <= 0)
 			{
 				Ready_queue[0].State = 1; //block
@@ -306,7 +293,7 @@ int main()
 	}
 	cout << endl
 		 << "Total time slices: " << order << endl;
-	analyze(Finish_queue, 0);
+	analyze(Finish_queue, 1);
 	system("pause");
 	return 0;
 }

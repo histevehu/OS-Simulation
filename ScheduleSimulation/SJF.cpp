@@ -1,16 +1,17 @@
-//First come first service schedule
+//Preemptive short jobs first schedule
 #include <iostream>
 #include <vector>
 #include "header/PCB"
 #include "header/ProcessAnalyze"
 #define OUTPUT_TABLE_WIDTH 15
+
 using namespace std;
 
 vector<pcb> Waiting_queue;
 vector<pcb> Ready_queue;
 vector<pcb> Block_queue;
 vector<pcb> Finish_queue;
-int n;
+int n; //Number of processes
 
 void process_info_input()
 {
@@ -41,15 +42,15 @@ void process_info_input()
 	}
 }
 
-//Arrange PCBs in the ready queue in ascending order according to arrival time
+//Arrange the PCBs in the ready queue in ascending order according to the task cost time
 void sort()
 {
 	if (Ready_queue.empty() && Block_queue.empty())
 		return;
 	else
-		for (int i = 0; i < Ready_queue.size() - 1; i++) //就绪队列排序
+		for (int i = 0; i < Ready_queue.size() - 1; i++)
 			for (int j = i + 1; j < Ready_queue.size(); j++)
-				if (Ready_queue[i].Arrive_time > Ready_queue[j].Arrive_time)
+				if (Ready_queue[i].Cost_time > Ready_queue[j].Cost_time)
 				{
 					swap(Ready_queue[i], Ready_queue[j]);
 				}
@@ -67,7 +68,7 @@ void process_info_print()
 		cout.width(OUTPUT_TABLE_WIDTH);
 		cout << "Cost_time";
 		cout.width(OUTPUT_TABLE_WIDTH);
-		cout << "Total_time";
+		cout << "TA_time";
 		cout.width(OUTPUT_TABLE_WIDTH);
 		cout << "Running_time";
 		cout.width(OUTPUT_TABLE_WIDTH);
@@ -112,7 +113,7 @@ void process_info_print()
 			cout << (*wq).State << endl;
 		}
 	}
-	if (!Ready_queue.empty()) //Ready queue output
+	if (!Ready_queue.empty())
 	{
 		cout << "<Ready Queue>" << endl;
 		for (int i = 0; i < Ready_queue.size(); i++)
@@ -211,9 +212,9 @@ void run(int order)
 		{
 			if ((*wq).Arrive_time == order) //Time to arrive
 			{
-				(*wq).State = 0;			  //Status changed to ready
-				Ready_queue.push_back((*wq)); //Push to ready queue
-				wq = Waiting_queue.erase(wq); //Delete in waiting queue
+				(*wq).State = 0;			  //Set state to ready
+				Ready_queue.push_back((*wq)); //Put into ready queue
+				wq = Waiting_queue.erase(wq); //Delete from waiting queue
 			}
 			else
 			{
@@ -232,7 +233,7 @@ void run(int order)
 			{
 				(*bq).State = 0; //Status changed to ready
 				(*bq).Start_block_t = (*bq).Start_block;
-				Ready_queue.push_back((*bq)); //push to ready queue
+				Ready_queue.push_back((*bq)); //Put into ready queue
 				bq = Block_queue.erase(bq);	  //Delete in the blocking queue
 			}
 			else
@@ -250,18 +251,18 @@ void run(int order)
 		Ready_queue[0].Rest_time--;
 		Ready_queue[0].Running_time++;
 		Ready_queue[0].Start_block_t--;
-		//The occupied CPU time of the process has reached the required running time, cancel the process
+		//if the occupied CPU time of the process has reached the required running time, cancel the process
 		if (Ready_queue[0].Rest_time <= 0)
 		{
-			Ready_queue[0].State = 2; //carry out
+			Ready_queue[0].State = 2; // Change state to finish
 			Ready_queue[0].TA_time = order + 1 - Ready_queue[0].Arrive_time;
 			Ready_queue[0].WTA_time = 1.0 * Ready_queue[0].TA_time / Ready_queue[0].Cost_time;
-			Finish_queue.push_back(Ready_queue[0]); //Ready to end queue
+			Finish_queue.push_back(Ready_queue[0]); //Push to finish queue
 			Ready_queue.erase(Ready_queue.begin()); //Delete the process
 		}
 		else
 		{
-			//Is it about to be blocked, ready to turn to the blocking queue?
+			//Is it about to be blocked and should turn to the blocking queue?
 			if (Ready_queue[0].Start_block_t <= 0)
 			{
 				Ready_queue[0].State = 1; //block
@@ -277,6 +278,7 @@ int main()
 	process_info_input();
 	int order = 0;
 	cout.setf(std::ios::left);
+	//Each cycle is a time slice
 	while (!Waiting_queue.empty() || !Ready_queue.empty() || !Block_queue.empty())
 	{
 		run(order++);
@@ -285,6 +287,7 @@ int main()
 			 << "================================================================================ Time Slice: " << (order) << " ================================================================================" << endl;
 		process_info_print();
 	}
+	//All queues are empty, all processes are finished, out result
 	cout << "Running Finished." << endl
 		 << "Process completion sequence:";
 	for (vector<pcb>::iterator fq = Finish_queue.begin(); fq != Finish_queue.end(); fq++)
@@ -293,7 +296,7 @@ int main()
 	}
 	cout << endl
 		 << "Total time slices: " << order << endl;
-	analyze(Finish_queue, 1);
+	analyze(Finish_queue, 2);
 	system("pause");
 	return 0;
 }

@@ -7,7 +7,6 @@
 #define OUTPUT_TABLE_WIDTH 15
 using namespace std;
 
-
 vector<pcb> Ready_queue;
 vector<pcb>::iterator rq; //ready queue iterator
 vector<pcb> Finish_queue;
@@ -61,7 +60,7 @@ void process_info_print()
 	cout.width(OUTPUT_TABLE_WIDTH);
 	cout << "Cost_time";
 	cout.width(OUTPUT_TABLE_WIDTH);
-	cout << "Total_time";
+	cout << "TA_time";
 	cout.width(OUTPUT_TABLE_WIDTH);
 	cout << "Running_time";
 	cout.width(OUTPUT_TABLE_WIDTH);
@@ -125,7 +124,7 @@ void run(int order)
 		if ((*rq).Rest_time <= 0)
 		{
 			(*rq).TA_time = order + 1 - (*rq).Arrive_time;
-			Ready_queue[0].WTA_time = 1.0 * Ready_queue[0].TA_time / Ready_queue[0].Cost_time;
+			(*rq).WTA_time = 1.0 * (*rq).TA_time / (*rq).Cost_time;
 			(*rq).State = 1;
 			Finish_queue.push_back(*rq);
 			rq = Ready_queue.erase(rq);
