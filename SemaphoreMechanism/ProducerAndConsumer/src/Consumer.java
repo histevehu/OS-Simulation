@@ -1,11 +1,6 @@
-package v3;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.LockSupport;
-
-import static v3.SharedMem.*;
 
 class Consumer extends Thread
 {
@@ -38,23 +33,23 @@ class Consumer extends Thread
         {
             try
             {
-                mutex_full.acquire();// full信号量减1
+                SharedMem.mutex_full.acquire();
                 //System.out.println("  -(" + Thread.currentThread().getName() + "," + actionID + "): mutex_full:" + mutex_full.availablePermits() );
-                mutex_consumers[consumers.indexOf(Thread.currentThread())].acquire();
-                mutex.acquire();
-                if (buffer.size() > 0)
+                SharedMem.mutex_consumers[SharedMem.consumers.indexOf(Thread.currentThread())].acquire();
+                SharedMem.mutex.acquire();
+                if (SharedMem.buffer.size() > 0)
                 {
-                    int n = buffer.remove();
+                    int n = SharedMem.buffer.remove();
                     data.add(n);
-                    totalConsumedNum.addAndGet(1);
+                    SharedMem.totalConsumedNum.addAndGet(1);
                     System.out.println(">>>[" + Thread.currentThread().getName() + "," + actionID + "]: consumed " + n);
                     printConsumedData();
                 }
-                mutex.release();
-                mutex_consumers[(consumers.indexOf(Thread.currentThread()) + 1) % mutex_consumers.length].release();
-                mutex_empty.release();// empty信号量加1
+                SharedMem.mutex.release();
+                SharedMem.mutex_consumers[(SharedMem.consumers.indexOf(Thread.currentThread()) + 1) % SharedMem.mutex_consumers.length].release();
+                SharedMem.mutex_empty.release();
                 //System.out.println("  -(" + Thread.currentThread().getName() + "," + actionID + "): mutex_empty:" + mutex_empty.availablePermits() );
-                if (totalConsumedNum.get() >= resourceNum)
+                if (SharedMem.totalConsumedNum.get() >= SharedMem.resourceNum)
                 {
                     System.out.println("<!>" + Thread.currentThread().getName() + " stopped (consumed all resources)");
                     System.exit(0);

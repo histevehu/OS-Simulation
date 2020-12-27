@@ -1,12 +1,7 @@
-package v3;
-
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.LockSupport;
-
-import static v3.SharedMem.*;
 
 class Producer extends Thread
 {
@@ -45,21 +40,21 @@ class Producer extends Thread
         {
             try
             {
-                mutex_empty.acquire();// empty信号量减1
+                SharedMem.mutex_empty.acquire();
                 //System.out.println("  -(" + Thread.currentThread().getName() + "," + actionID + "): mutex_empty:" + mutex_empty.availablePermits() );
-                mutex_producers[producers.indexOf(Thread.currentThread())].acquire();
-                mutex.acquire();
+                SharedMem.mutex_producers[SharedMem.producers.indexOf(Thread.currentThread())].acquire();
+                SharedMem.mutex.acquire();
                 if (resource.size() > 0)
                 {
                     int data = resource.remove();
-                    buffer.add(data);
+                    SharedMem.buffer.add(data);
                     System.out.println(">>>[" + Thread.currentThread().getName() + "," + actionID + "]: produced " + data);
-                    printBufferUsage();
+                    SharedMem.printBufferUsage();
                 }
                 //sleep(100);
-                mutex.release();
-                mutex_producers[(producers.indexOf(Thread.currentThread()) + 1) % mutex_producers.length].release();
-                mutex_full.release();// full信号量加1
+                SharedMem.mutex.release();
+                SharedMem.mutex_producers[(SharedMem.producers.indexOf(Thread.currentThread()) + 1) % SharedMem.mutex_producers.length].release();
+                SharedMem.mutex_full.release();
                 //System.out.println("<!>Unlock "+producers.get((producers.indexOf(Thread.currentThread()) + 1) % producers.size()).getName());
                 //System.out.println("  -(" + Thread.currentThread().getName() + "," + actionID + "): mutex_full:" + mutex_full.availablePermits() );
                 actionID.addAndGet(1);

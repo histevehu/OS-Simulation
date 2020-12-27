@@ -1,6 +1,3 @@
-package v3;
-
-import java.util.FormatFlagsConversionMismatchException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -15,9 +12,9 @@ public class SharedMem
     public static int resourceNum = 0;
     public static AtomicInteger totalConsumedNum = new AtomicInteger();
 
-    public static Semaphore mutex_empty;    // 可以进行empty操作的许可数量
-    public static Semaphore mutex_full;     // 可以进行full操作的许可数量
-    public static Semaphore mutex;       //相当于锁 控制非线程安全的valueList的操作
+    public static Semaphore mutex_empty;
+    public static Semaphore mutex_full;
+    public static Semaphore mutex;
     public static Semaphore mutex_producers[];
     public static Semaphore mutex_consumers[];
 
@@ -33,8 +30,8 @@ public class SharedMem
             consumers.add(new Consumer("C" + i));
         totalConsumedNum.set(0);
         resourceNum = resNum;
-        mutex_empty = new Semaphore(bufferSize);// 维护队列大小
-        mutex_full = new Semaphore(0);// 初始化时，队列为空，empty信号量数量为0
+        mutex_empty = new Semaphore(bufferSize);
+        mutex_full = new Semaphore(0);
         mutex = new Semaphore(1);
         mutex_producers = new Semaphore[producers.size()];
         mutex_consumers = new Semaphore[consumers.size()];
@@ -45,8 +42,7 @@ public class SharedMem
             mutex_consumers[i] = new Semaphore(0);
         mutex_consumers[0].release();
 
-        System.out.println("  = mutex_empty:" + mutex_empty.availablePermits()
-                + ",mutex_full:" + mutex_full.availablePermits());
+        //System.out.println("  = mutex_empty:" + mutex_empty.availablePermits() + ",mutex_full:" + mutex_full.availablePermits());
     }
 
     public static void startAll()
